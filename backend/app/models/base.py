@@ -1,6 +1,6 @@
-from sqlalchemy import ForeignKey, Index
+from sqlalchemy import ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, declared_attr
 
 from app.db.base import Base
 
@@ -10,12 +10,14 @@ class BaseModel(Base):
     organization_id: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("organizations.id", ondelete="CASCADE"),
-        nullable=False, # Some models may not need it but I am requiring it for clarity and safety
+        nullable=False,
         index=True,
         comment="The organization this record belongs to",
     )
 
-    __table_args__ = (
-        Index('idx_organization_id_id', 'organization_id', 'id'),
-    )
+    @declared_attr
+    def __table_args__(cls):
+        return (
+            {"comment": f"{cls.__name__} table for multi-tenant data"},
+        )
 

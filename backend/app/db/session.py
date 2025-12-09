@@ -24,6 +24,10 @@ AsyncSessionLocal = sessionmaker(
     autoflush=False,
 )
 
+# Alias for compatibility with main.py
+async_session_maker = AsyncSessionLocal
+
+
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with AsyncSessionLocal() as session:
         try:
