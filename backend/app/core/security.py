@@ -135,7 +135,9 @@ def decode_token(token: str) -> Optional[TokenPayload]:
             exp=exp,
             type=token_type,
             email=payload.get("email"),
-            is_superuser=payload.get("is_superuser", False)
+            is_superuser=payload.get("is_superuser", False),
+            iat=payload.get("iat"),  # Include issued-at timestamp for revocation checking
+            jti=payload.get("jti")   # Include JWT ID for token blacklisting
         )
         return token_data
     except JWTError:

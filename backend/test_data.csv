@@ -1,0 +1,6 @@
+id,name,age,email,salary,department
+1,Alice Smith,28,alice@company.com,75000,Engineering
+2,Bob Johnson,35,bob@company.com,85000,Sales
+3,Charlie Brown,42,charlie@company.com,95000,Engineering
+4,Diana Prince,31,diana@company.com,80000,Marketing
+5,Eve Adams,29,eve@company.com,78000,Sales

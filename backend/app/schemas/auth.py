@@ -43,6 +43,8 @@ class TokenPayload(BaseSchema):
     type: str  # "access" or "refresh"
     email: Optional[str] = None
     is_superuser: bool = False
+    iat: Optional[int] = None  # issued at timestamp (for revocation checking)
+    jti: Optional[str] = None  # JWT ID (unique token identifier)
 
 
 # Login Response (includes tokens and user info)

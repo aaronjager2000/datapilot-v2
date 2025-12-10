@@ -53,3 +53,7 @@ def get_current_org_id(
     current_user: User = Depends(get_current_user)
 ) -> UUID:
     return current_user.organization_id
+
+
+# Alias for backwards compatibility
+get_current_organization_id = get_current_org_id

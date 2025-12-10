@@ -121,4 +121,10 @@ class Organization(Base):
             SubscriptionStatus.TRIALING
         ]
     
-    
+        
+    # Relationships
+    webhooks: Mapped[list["Webhook"]] = relationship(
+        "Webhook",
+        back_populates="organization",
+        cascade="all, delete-orphan"
+    )

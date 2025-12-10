@@ -70,6 +70,7 @@ async def update_current_organization(
 
 
 @router.patch("/{organization_id}", response_model=OrganizationResponse)
+@router.put("/{organization_id}", response_model=OrganizationResponse)
 async def update_organization(
     organization_id: UUID,
     update_data: OrganizationUpdate,

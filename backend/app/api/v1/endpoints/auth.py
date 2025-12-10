@@ -56,8 +56,7 @@ async def register(
     user = User(
         email=user_data.email,
         hashed_password=hashed_password,
-        first_name=user_data.first_name,
-        last_name=user_data.last_name,
+        full_name=user_data.full_name,
         organization_id=org.id,
         is_active=True,
         is_superuser=False
@@ -76,11 +75,29 @@ async def register(
         is_superuser=user.is_superuser
     )
 
+    # Create UserResponse without trying to load the organization relationship
+    # (the relationship is commented out in the User model)
+    user_data = {
+        "id": user.id,
+        "email": user.email,
+        "full_name": user.full_name,
+        "organization_id": user.organization_id,
+        "is_active": user.is_active,
+        "is_superuser": user.is_superuser,
+        "email_verified": user.email_verified,
+        "last_login": user.last_login,
+        "oauth_provider": user.oauth_provider,
+        "oauth_id": user.oauth_id,
+        "created_at": user.created_at,
+        "updated_at": user.updated_at,
+    }
+
     return LoginResponse(
         access_token=tokens.access_token,
         refresh_token=tokens.refresh_token,
         token_type=tokens.token_type,
-        user=UserResponse.model_validate(user)
+        expires_in=tokens.expires_in,
+        user=UserResponse.model_validate(user_data)
     )
 
 
@@ -119,6 +136,7 @@ async def login(
     # Update last login timestamp
     user.last_login = datetime.now(timezone.utc)
     await db.commit()
+    await db.refresh(user)  # Refresh to load all attributes after commit
 
     # Generate JWT token pair
     tokens = await jwt_svc.create_token_pair(
@@ -128,11 +146,29 @@ async def login(
         is_superuser=user.is_superuser
     )
 
+    # Create UserResponse without trying to load the organization relationship
+    # (the relationship is commented out in the User model)
+    user_data = {
+        "id": user.id,
+        "email": user.email,
+        "full_name": user.full_name,
+        "organization_id": user.organization_id,
+        "is_active": user.is_active,
+        "is_superuser": user.is_superuser,
+        "email_verified": user.email_verified,
+        "last_login": user.last_login,
+        "oauth_provider": user.oauth_provider,
+        "oauth_id": user.oauth_id,
+        "created_at": user.created_at,
+        "updated_at": user.updated_at,
+    }
+
     return LoginResponse(
         access_token=tokens.access_token,
         refresh_token=tokens.refresh_token,
         token_type=tokens.token_type,
-        user=UserResponse.model_validate(user)
+        expires_in=tokens.expires_in,
+        user=UserResponse.model_validate(user_data)
     )
 
 
@@ -179,4 +215,20 @@ async def logout(
 async def get_current_user_info(
     current_user: User = Depends(get_current_user)
 ) -> Any:
-    return UserResponse.model_validate(current_user)
+    # Create UserResponse without trying to load the organization relationship
+    # (the relationship is commented out in the User model)
+    user_data = {
+        "id": current_user.id,
+        "email": current_user.email,
+        "full_name": current_user.full_name,
+        "organization_id": current_user.organization_id,
+        "is_active": current_user.is_active,
+        "is_superuser": current_user.is_superuser,
+        "email_verified": current_user.email_verified,
+        "last_login": current_user.last_login,
+        "oauth_provider": current_user.oauth_provider,
+        "oauth_id": current_user.oauth_id,
+        "created_at": current_user.created_at,
+        "updated_at": current_user.updated_at,
+    }
+    return UserResponse.model_validate(user_data)

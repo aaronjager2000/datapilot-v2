@@ -100,7 +100,7 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
         except Exception as exc:
             # Unexpected errors
             logger.error(
-                "Unexpected error",
+                f"Unexpected error: {type(exc).__name__}: {str(exc)}",
                 extra={
                     "error": str(exc),
                     "error_type": type(exc).__name__,
@@ -108,10 +108,12 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
                 },
                 exc_info=True
             )
+            # In development, return the actual error
             return JSONResponse(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 content={
                     "detail": "Internal server error",
-                    "error": "An unexpected error occurred"
+                    "error": str(exc),
+                    "error_type": type(exc).__name__
                 }
             )

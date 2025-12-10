@@ -14,6 +14,7 @@ from app.middleware.error_handler import ErrorHandlerMiddleware
 from app.middleware.logging import LoggingMiddleware
 from app.middleware.rate_limit import RateLimitMiddleware
 from app.middleware.tenant import TenantMiddleware
+from app.services.auth.jwt import jwt_service
 
 logging.basicConfig(
     level=logging.INFO,
@@ -27,6 +28,14 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     # Startup
     logger.info("Starting up Datapilot application...")
+
+    # Initialize Redis client for JWT service
+    redis_client = get_redis_client()
+    if redis_client:
+        jwt_service.redis = redis_client
+        logger.info("JWT service initialized with Redis client")
+    else:
+        logger.warning("Redis client not available - token blacklisting disabled")
 
     # Initialize database
     try:

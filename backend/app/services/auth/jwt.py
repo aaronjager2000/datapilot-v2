@@ -136,8 +136,11 @@ class JWTService:
             return False
 
         # Parse timestamps and compare
-        revoke_dt = datetime.fromisoformat(revoke_timestamp.decode())
-        token_dt = datetime.fromtimestamp(token_issued_at)
+        # Handle both bytes and str return from Redis
+        if isinstance(revoke_timestamp, bytes):
+            revoke_timestamp = revoke_timestamp.decode()
+        revoke_dt = datetime.fromisoformat(revoke_timestamp)
+        token_dt = datetime.fromtimestamp(token_issued_at, tz=timezone.utc)
 
         return token_dt < revoke_dt
 
@@ -178,7 +181,7 @@ class JWTService:
             # Check if user's tokens have been globally revoked
             # Note: This requires the token to have an 'iat' (issued at) claim
             # which we added in the security.py hardening
-            if hasattr(token_data, 'iat'):
+            if token_data.iat is not None:
                 is_revoked = await self.is_user_tokens_revoked(
                     user_id=token_data.sub,
                     token_issued_at=token_data.iat
@@ -203,3 +206,7 @@ jwt_service = JWTService()
 def get_jwt_service() -> JWTService:
 
     return jwt_service
+
+
+# Alias for backwards compatibility
+decode_token = verify_token

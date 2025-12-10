@@ -16,6 +16,10 @@ from app.models.base import BaseModel
 if TYPE_CHECKING:
     from app.models.organization import Organization
     from app.models.role import Role
+    from app.models.dataset import Dataset
+    from app.models.file import File
+    from app.models.visualization import Visualization
+    from app.models.dashboard import Dashboard
 
 
 class User(BaseModel):
@@ -102,6 +106,30 @@ class User(BaseModel):
     #     secondary="user_roles",
     #     back_populates="users"
     # )
+
+    datasets: Mapped[list["Dataset"]] = relationship(
+        "Dataset",
+        back_populates="creator",
+        foreign_keys="Dataset.created_by"
+    )
+
+    uploaded_files: Mapped[list["File"]] = relationship(
+        "File",
+        back_populates="uploader",
+        foreign_keys="File.uploaded_by"
+    )
+
+    visualizations: Mapped[list["Visualization"]] = relationship(
+        "Visualization",
+        back_populates="creator",
+        foreign_keys="Visualization.created_by"
+    )
+
+    dashboards: Mapped[list["Dashboard"]] = relationship(
+        "Dashboard",
+        back_populates="creator",
+        foreign_keys="Dashboard.created_by"
+    )
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, email='{self.email}', org_id={self.organization_id})>"

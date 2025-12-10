@@ -3,9 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.security import get_password_hash
-from app.models.organization import Organization
-from app.models.user import User
-from app.models.role import Role
+# Import all models to ensure relationships are properly configured
+from app.models import Organization, User, Role, Dataset, Record, File
 
 
 async def init_db(db: AsyncSession) -> None:

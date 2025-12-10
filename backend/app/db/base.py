@@ -8,7 +8,7 @@ from sqlalchemy import DateTime, func
 from sqlalchemy import String
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 from uuid import UUID as PyUUID,uuid4
 
 class Base(DeclarativeBase):
@@ -31,6 +31,13 @@ class Base(DeclarativeBase):
         onupdate=func.now(),
         nullable=False,
         comment="Timestamp when this record was last updated"
+    )
+
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        default=None,
+        comment="Timestamp when this record was soft-deleted (NULL if not deleted)"
     )
 
     def __repr__(self) -> str:

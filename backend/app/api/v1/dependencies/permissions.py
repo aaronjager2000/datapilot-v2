@@ -64,3 +64,7 @@ def check_all_permissions(*permissions: Permission):
         return current_user
     
     return permission_dependency
+
+
+# Alias for backwards compatibility
+require_permission = check_permission
