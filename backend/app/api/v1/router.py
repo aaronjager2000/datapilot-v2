@@ -1,6 +1,20 @@
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import auth, users, organizations, files, datasets, records, websocket, visualizations, dashboards, insights, webhooks
+from app.api.v1.endpoints import (
+    auth,
+    users,
+    organizations,
+    files,
+    datasets,
+    records,
+    websocket,
+    visualizations,
+    dashboards,
+    insights,
+    webhooks,
+    roles,
+    permissions,
+)
 
 api_router = APIRouter()
 
@@ -68,4 +82,16 @@ api_router.include_router(
     webhooks.router,
     prefix="/webhooks",
     tags=["webhooks"]
+)
+
+api_router.include_router(
+    roles.router,
+    prefix="/roles",
+    tags=["roles"]
+)
+
+api_router.include_router(
+    permissions.router,
+    prefix="/permissions",
+    tags=["permissions"]
 )

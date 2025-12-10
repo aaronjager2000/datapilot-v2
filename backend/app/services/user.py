@@ -186,44 +186,72 @@ class UserService:
         return len(users)
 
     async def assign_role(self, user_id: UUID, role_id: UUID) -> bool:
+        """Assign a role to a user."""
+        from app.models import Role
+        
         user = await self.get_by_id(user_id)
-
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found"
             )
-
-        # TODO: Implement when RBAC tables are created
-        # user_role = UserRole(user_id=user_id, role_id=role_id)
-        # self.db.add(user_role)
-        # await self.db.commit()
-
-        raise NotImplementedError("Role assignment requires RBAC tables - Week 3")
+        
+        # Get role
+        role_result = await self.db.execute(
+            select(Role).where(Role.id == role_id)
+        )
+        role = role_result.scalar_one_or_none()
+        
+        if not role:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Role not found"
+            )
+        
+        # Verify role belongs to same organization
+        if role.organization_id != user.organization_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Role and user must belong to same organization"
+            )
+        
+        # Assign role if not already assigned
+        if role not in user.roles:
+            user.roles.append(role)
+            await self.db.commit()
+        
+        return True
 
     async def remove_role(self, user_id: UUID, role_id: UUID) -> bool:
+        """Remove a role from a user."""
+        from app.models import Role
+        
         user = await self.get_by_id(user_id)
-
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found"
             )
-
-        # TODO: Implement when RBAC tables are created
-        # result = await self.db.execute(
-        #     select(UserRole).where(
-        #         UserRole.user_id == user_id,
-        #         UserRole.role_id == role_id
-        #     )
-        # )
-        # user_role = result.scalar_one_or_none()
-        # if user_role:
-        #     await self.db.delete(user_role)
-        #     await self.db.commit()
-        #     return True
-
-        raise NotImplementedError("Role removal requires RBAC tables - Week 3")
+        
+        # Get role
+        role_result = await self.db.execute(
+            select(Role).where(Role.id == role_id)
+        )
+        role = role_result.scalar_one_or_none()
+        
+        if not role:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Role not found"
+            )
+        
+        # Remove role if assigned
+        if role in user.roles:
+            user.roles.remove(role)
+            await self.db.commit()
+            return True
+        
+        return False
 
     async def grant_permission(self, user_id: UUID, permission_code: str) -> bool:
         user = await self.get_by_id(user_id)

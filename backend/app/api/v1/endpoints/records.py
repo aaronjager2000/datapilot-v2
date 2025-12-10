@@ -263,10 +263,51 @@ async def update_record(
         # Update data
         record.data = data
         
-        # TODO: Re-run validation if rules exist
-        # For now, mark as valid
-        record.is_valid = True
-        record.validation_errors = None
+        # Re-run validation if dataset schema exists
+        validation_errors = []
+        
+        # Get dataset schema for validation
+        if record.dataset and record.dataset.schema:
+            schema = record.dataset.schema
+            
+            # Validate required fields
+            if 'required_columns' in schema:
+                for required_col in schema['required_columns']:
+                    if required_col not in data or data[required_col] is None:
+                        validation_errors.append({
+                            'field': required_col,
+                            'error': 'Required field is missing or null'
+                        })
+            
+            # Validate data types if schema includes column types
+            if 'columns' in schema:
+                for col_name, col_info in schema['columns'].items():
+                    if col_name in data and data[col_name] is not None:
+                        expected_type = col_info.get('type')
+                        value = data[col_name]
+                        
+                        # Basic type validation
+                        if expected_type == 'integer' and not isinstance(value, (int, float)):
+                            try:
+                                int(value)
+                            except (ValueError, TypeError):
+                                validation_errors.append({
+                                    'field': col_name,
+                                    'error': f'Expected integer, got {type(value).__name__}'
+                                })
+                        
+                        elif expected_type == 'float' and not isinstance(value, (int, float)):
+                            try:
+                                float(value)
+                            except (ValueError, TypeError):
+                                validation_errors.append({
+                                    'field': col_name,
+                                    'error': f'Expected float, got {type(value).__name__}'
+                                })
+        
+        # Update validation status
+        record.is_valid = len(validation_errors) == 0
+        record.validation_errors = validation_errors if validation_errors else None
         
         await db.commit()
         await db.refresh(record)

@@ -8,8 +8,10 @@ with proper authentication, permissions, and signature verification.
 import logging
 import time
 import json
+import os
 from typing import Optional, List
 from uuid import UUID
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, desc
@@ -637,23 +639,117 @@ async def receive_inbound_webhook(
     
     # Extract dataset information from payload
     dataset_name = payload.get("name", f"Inbound webhook data - {webhook.name}")
+    dataset_description = payload.get("description", f"Data received via webhook {webhook.name}")
     dataset_data = payload.get("data", payload)  # Use 'data' field or entire payload
     
-    # TODO: Create dataset from payload
-    # For now, just log and return success
-    logger.info(
-        f"Received inbound webhook data for webhook {webhook_id}: "
-        f"{len(body_str)} bytes, {len(dataset_data)} records"
-    )
+    # Validate that we have data to process
+    if not dataset_data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No data found in payload"
+        )
     
-    # Note: Actual dataset creation would happen here
-    # This would involve:
-    # 1. Creating a Dataset record
-    # 2. Storing the data in storage backend
-    # 3. Triggering processing pipeline
+    # Ensure data is a list of records
+    if isinstance(dataset_data, dict):
+        # If single record, wrap in list
+        dataset_data = [dataset_data]
+    elif not isinstance(dataset_data, list):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Data must be a JSON object or array of objects"
+        )
     
-    return InboundWebhookResponse(
-        success=True,
-        message=f"Received {len(dataset_data)} records",
-        dataset_id=None  # Would be actual dataset ID after creation
-    )
+    try:
+        # Import pandas for data handling
+        import pandas as pd
+        import tempfile
+        from app.models.dataset import DatasetStatus
+        from app.utils.s3_client import S3Client
+        from app.core.config import settings
+        from app.workers.ingestion_worker import process_dataset as process_dataset_task
+        
+        logger.info(
+            f"Creating dataset from inbound webhook {webhook_id}: "
+            f"{len(dataset_data)} records"
+        )
+        
+        # Convert data to DataFrame
+        df = pd.DataFrame(dataset_data)
+        
+        # Create temporary CSV file
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp_file:
+            csv_path = tmp_file.name
+            df.to_csv(csv_path, index=False)
+        
+        # Upload to storage
+        storage_filename = f"webhook_{webhook_id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
+        
+        if settings.STORAGE_TYPE == "s3":
+            s3_client = S3Client()
+            storage_path = await s3_client.upload_file_async(
+                csv_path,
+                f"{webhook.organization_id}/webhooks/{storage_filename}"
+            )
+            storage_location = "s3"
+        else:
+            # For local storage, move file to storage directory
+            from pathlib import Path
+            storage_dir = Path(settings.STORAGE_PATH) / str(webhook.organization_id) / "webhooks"
+            storage_dir.mkdir(parents=True, exist_ok=True)
+            storage_path = str(storage_dir / storage_filename)
+            
+            import shutil
+            shutil.move(csv_path, storage_path)
+            storage_location = "local"
+        
+        # Calculate file size
+        file_size = os.path.getsize(storage_path) if storage_location == "local" else len(body_str)
+        
+        # Create Dataset record
+        from app.models.dataset import Dataset
+        dataset = Dataset(
+            organization_id=webhook.organization_id,
+            name=dataset_name,
+            description=dataset_description,
+            file_name=storage_filename,
+            file_size=file_size,
+            file_path=storage_path,
+            status=DatasetStatus.PROCESSING,
+            source_type="webhook",
+            source_config={"webhook_id": str(webhook_id), "webhook_name": webhook.name}
+        )
+        
+        db.add(dataset)
+        await db.commit()
+        await db.refresh(dataset)
+        
+        logger.info(f"Created dataset {dataset.id} from webhook {webhook_id}")
+        
+        # Trigger background processing
+        process_dataset_task.delay(str(dataset.id))
+        logger.info(f"Triggered background processing for dataset {dataset.id}")
+        
+        # Clean up temp file if it still exists
+        try:
+            if os.path.exists(csv_path):
+                os.unlink(csv_path)
+        except:
+            pass
+        
+        return InboundWebhookResponse(
+            success=True,
+            message=f"Successfully created dataset with {len(dataset_data)} records",
+            dataset_id=dataset.id
+        )
+    
+    except pd.errors.EmptyDataError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Payload contains no valid data"
+        )
+    except Exception as e:
+        logger.error(f"Failed to create dataset from webhook {webhook_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create dataset: {str(e)}"
+        )

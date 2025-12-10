@@ -8,6 +8,12 @@ from app.models.base import BaseModel
 from app.models.organization import Organization
 from app.models.user import User
 from app.models.role import Role
+from app.models.permission import (
+    Permission,
+    user_roles,
+    role_permissions,
+    user_permissions
+)
 from app.models.dataset import Dataset, DatasetStatus
 from app.models.record import Record
 from app.models.file import File
@@ -21,6 +27,10 @@ __all__ = [
     "Organization",
     "User",
     "Role",
+    "Permission",
+    "user_roles",
+    "role_permissions",
+    "user_permissions",
     "Dataset",
     "DatasetStatus",
     "Record",

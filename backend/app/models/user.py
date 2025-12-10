@@ -98,14 +98,16 @@ class User(BaseModel):
     )
 
     # Relationships
-    # organization: Mapped["Organization"] = relationship(
-    #     back_populates="users",
-    #     foreign_keys=[BaseModel.organization_id]
-    # )
-    # roles: Mapped[list["Role"]] = relationship(
-    #     secondary="user_roles",
-    #     back_populates="users"
-    # )
+    organization: Mapped["Organization"] = relationship(
+        back_populates="users",
+        foreign_keys=[BaseModel.organization_id]
+    )
+    
+    roles: Mapped[list["Role"]] = relationship(
+        secondary="user_roles",
+        back_populates="users",
+        lazy="selectin"
+    )
 
     datasets: Mapped[list["Dataset"]] = relationship(
         "Dataset",

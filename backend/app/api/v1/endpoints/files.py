@@ -212,8 +212,10 @@ async def upload_file(
 
         logger.info(f"File uploaded successfully: {file_record.id}, dataset: {dataset.id}")
 
-        # TODO: Enqueue background task for parsing the file
-        # This will be implemented in the next step with the parser service
+        # Trigger background processing task
+        from app.workers.ingestion_worker import process_dataset
+        process_dataset.delay(str(dataset.id))
+        logger.info(f"Enqueued background processing task for dataset {dataset.id}")
 
         return FileUploadResponse(
             file_id=file_record.id,

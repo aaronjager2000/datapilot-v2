@@ -59,25 +59,31 @@ class Role(BaseModel):
     )
 
     # Relationships
-    # users: Mapped[list["User"]] = relationship(
-    #     secondary="user_roles",
-    #     back_populates="roles"
-    # )
-    # permissions: Mapped[list["Permission"]] = relationship(
-    #     secondary="role_permissions",
-    #     back_populates="roles"
-    # )
+    users: Mapped[list["User"]] = relationship(
+        secondary="user_roles",
+        back_populates="roles",
+        lazy="selectin"
+    )
+    
+    permissions: Mapped[list["Permission"]] = relationship(
+        secondary="role_permissions",
+        back_populates="roles",
+        lazy="selectin"
+    )
 
     def __repr__(self) -> str:
         return f"<Role(id={self.id}, name='{self.name}', org_id={self.organization_id})>"
-
-
-# Association table for many-to-many relationship between users and roles
-# This will be created in a separate file or can be defined here
-# user_roles = Table(
-#     'user_roles',
-#     Base.metadata,
-#     Column('user_id', UUID(as_uuid=True), ForeignKey('users.id', ondelete='CASCADE'), primary_key=True),
-#     Column('role_id', UUID(as_uuid=True), ForeignKey('roles.id', ondelete='CASCADE'), primary_key=True),
-#     Column('created_at', DateTime(timezone=True), server_default=func.now())
-# )
+    
+    def has_permission(self, permission_code: str) -> bool:
+        """Check if role has a specific permission."""
+        return any(p.code == permission_code for p in self.permissions)
+    
+    def add_permission(self, permission: "Permission") -> None:
+        """Add a permission to this role."""
+        if permission not in self.permissions:
+            self.permissions.append(permission)
+    
+    def remove_permission(self, permission: "Permission") -> None:
+        """Remove a permission from this role."""
+        if permission in self.permissions:
+            self.permissions.remove(permission)

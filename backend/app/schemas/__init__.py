@@ -71,6 +71,25 @@ from app.schemas.webhook import (
     InboundWebhookResponse,
 )
 
+from app.schemas.permission import (
+    PermissionBase,
+    PermissionCreate,
+    PermissionUpdate,
+    PermissionResponse,
+    PermissionListResponse,
+)
+
+from app.schemas.role import (
+    RoleBase,
+    RoleCreate,
+    RoleUpdate,
+    RoleResponse,
+    RoleWithPermissions,
+    RoleListResponse,
+    AssignRoleRequest,
+    AssignPermissionRequest,
+)
+
 __all__ = [
     # Visualization schemas
     "ChartConfig",
@@ -133,4 +152,19 @@ __all__ = [
     "WebhookTestRequest",
     "WebhookTestResponse",
     "InboundWebhookResponse",
+    # Permission schemas
+    "PermissionBase",
+    "PermissionCreate",
+    "PermissionUpdate",
+    "PermissionResponse",
+    "PermissionListResponse",
+    # Role schemas
+    "RoleBase",
+    "RoleCreate",
+    "RoleUpdate",
+    "RoleResponse",
+    "RoleWithPermissions",
+    "RoleListResponse",
+    "AssignRoleRequest",
+    "AssignPermissionRequest",
 ]
