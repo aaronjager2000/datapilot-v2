@@ -12,6 +12,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import BaseModel
+from app.models.permission import user_roles
 
 if TYPE_CHECKING:
     from app.models.user import User
@@ -60,9 +61,10 @@ class Role(BaseModel):
 
     # Relationships
     users: Mapped[list["User"]] = relationship(
-        secondary="user_roles",
+        secondary=user_roles,
         back_populates="roles",
-        lazy="selectin"
+        lazy="selectin",
+        foreign_keys=[user_roles.c.user_id, user_roles.c.role_id]
     )
     
     permissions: Mapped[list["Permission"]] = relationship(

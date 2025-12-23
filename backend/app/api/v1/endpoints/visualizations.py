@@ -203,7 +203,7 @@ async def list_visualizations(
 
             viz_response = VisualizationResponse.model_validate(viz)
             viz_response.dataset_name = dataset.name if dataset else None
-            viz_response.creator_name = f"{creator.first_name} {creator.last_name}".strip() if creator else None
+            viz_response.creator_name = creator.full_name if creator else None
 
             items.append(viz_response)
 

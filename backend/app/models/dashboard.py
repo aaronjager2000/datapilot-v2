@@ -8,7 +8,7 @@ a grid layout. They can be private or shared within an organization.
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime
 
-from sqlalchemy import String, Text, Boolean, ForeignKey, Table, Column
+from sqlalchemy import String, Text, Boolean, ForeignKey, Table, Column, DateTime, func
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -40,8 +40,9 @@ dashboard_visualizations = Table(
     ),
     Column(
         'added_at',
-        # Use server_default instead of importing func for consistency
-        # This will be set automatically by the database
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
         comment="When the visualization was added to the dashboard"
     ),
     comment="Association table linking dashboards to their visualizations"

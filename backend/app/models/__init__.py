@@ -5,6 +5,7 @@ Import order matters for relationship resolution!
 """
 
 from app.models.base import BaseModel
+from app.models.subscription import Subscription, SubscriptionPlan
 from app.models.organization import Organization
 from app.models.user import User
 from app.models.role import Role
@@ -43,4 +44,6 @@ __all__ = [
     "InsightGenerator",
     "Webhook",
     "WebhookLog",
+    "Subscription",
+    "SubscriptionPlan",
 ]

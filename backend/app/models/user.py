@@ -10,6 +10,7 @@ from datetime import datetime
 from sqlalchemy import String, Boolean, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from app.models.permission import user_roles
 
 from app.models.base import BaseModel
 
@@ -99,14 +100,14 @@ class User(BaseModel):
 
     # Relationships
     organization: Mapped["Organization"] = relationship(
-        back_populates="users",
-        foreign_keys=[BaseModel.organization_id]
+        back_populates="users"
     )
     
     roles: Mapped[list["Role"]] = relationship(
-        secondary="user_roles",
+        secondary=user_roles,
         back_populates="users",
-        lazy="selectin"
+        lazy="selectin",
+        foreign_keys=[user_roles.c.user_id, user_roles.c.role_id]
     )
 
     datasets: Mapped[list["Dataset"]] = relationship(

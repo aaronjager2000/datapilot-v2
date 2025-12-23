@@ -1,8 +1,13 @@
 from enum import Enum as PyEnum
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from sqlalchemy import String, Integer, Enum, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
+
+if TYPE_CHECKING:
+    from app.models.user import User
+    from app.models.webhook import Webhook
+    from app.models.subscription import Subscription
 
 class SubscriptionTier(str, PyEnum):
     FREE = "free"
@@ -123,8 +128,20 @@ class Organization(Base):
     
         
     # Relationships
+    users: Mapped[list["User"]] = relationship(
+        "User",
+        back_populates="organization",
+        cascade="all, delete-orphan"
+    )
+    
     webhooks: Mapped[list["Webhook"]] = relationship(
         "Webhook",
         back_populates="organization",
         cascade="all, delete-orphan"
+    )
+    
+    subscription: Mapped[Optional["Subscription"]] = relationship(
+        "Subscription",
+        back_populates="organization",
+        uselist=False
     )
